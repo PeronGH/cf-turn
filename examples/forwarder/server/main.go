@@ -6,17 +6,20 @@ import (
 	"context"
 	"flag"
 	"log"
+	"os"
 )
 
 func main() {
 	addr := flag.String("a", "", "address to forward to, e.g. localhost:8080")
+	realm := flag.String("realm", "cf-turn-forwarder.example.com", "realm used for TURN")
 	flag.Parse()
 
 	if *addr == "" {
-		log.Fatal("Address to forward to is required")
+		flag.PrintDefaults()
+		os.Exit(1)
 	}
 
-	turnClient, conn, relayConn, err := client.NewClientConn("cf-turn-forwarder.example.com")
+	turnClient, conn, relayConn, err := client.NewClientConn(*realm)
 	if err != nil {
 		log.Panicf("Failed to create client: %v", err)
 	}

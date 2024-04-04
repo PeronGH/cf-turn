@@ -6,21 +6,21 @@ import (
 	"context"
 	"flag"
 	"log"
+	"os"
 )
 
 func main() {
 	remotePort := flag.Int("r", 0, "remote port to forward to")
 	localPort := flag.Int("l", 0, "local port to listen on")
+	realm := flag.String("realm", "cf-turn-forwarder.example.com", "realm used for TURN")
 	flag.Parse()
 
-	if *remotePort == 0 {
-		log.Fatal("Remote port to forward to is required")
-	}
-	if *localPort == 0 {
-		log.Fatal("Local port to listen on is required")
+	if *remotePort == 0 || *localPort == 0 {
+		flag.PrintDefaults()
+		os.Exit(1)
 	}
 
-	turnClient, conn, relayConn, err := client.NewClientConn("cf-turn-forwarder.example.com")
+	turnClient, conn, relayConn, err := client.NewClientConn(*realm)
 	if err != nil {
 		log.Panicf("Failed to create client: %v", err)
 	}
