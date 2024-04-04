@@ -2,6 +2,7 @@ package quic
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log"
 	"sync"
@@ -40,7 +41,7 @@ func readAndWrite(ctx context.Context, r io.Reader, w io.Writer, wg *sync.WaitGr
 		if wg != nil {
 			defer wg.Done()
 		}
-		buff := make([]byte, 1024)
+		buff := make([]byte, 32*1024)
 
 		for {
 			select {
@@ -49,11 +50,17 @@ func readAndWrite(ctx context.Context, r io.Reader, w io.Writer, wg *sync.WaitGr
 			default:
 				nr, err := r.Read(buff)
 				if err != nil {
+					if !errors.Is(err, io.EOF) {
+						c <- err
+					}
 					return
 				}
 				if nr > 0 {
 					_, err := w.Write(buff[:nr])
 					if err != nil {
+						if !errors.Is(err, io.EOF) {
+							c <- err
+						}
 						return
 					}
 				}
