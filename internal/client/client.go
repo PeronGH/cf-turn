@@ -3,6 +3,7 @@ package client
 import (
 	"cf-stun/internal/credentials"
 	"net"
+	"time"
 
 	"github.com/pion/logging"
 	"github.com/pion/turn/v3"
@@ -30,6 +31,7 @@ func NewClientConn(realm string) (*turn.Client, net.PacketConn, net.PacketConn, 
 		Password:       creds.Password,
 		Realm:          realm,
 		LoggerFactory:  logging.NewDefaultLoggerFactory(),
+		RTO:            time.Second,
 	}
 
 	client, err := turn.NewClient(cfg)
