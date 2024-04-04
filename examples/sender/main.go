@@ -36,18 +36,6 @@ func main() {
 		Port: remotePort,
 	}
 
-	go func() {
-		for {
-			buf := make([]byte, 4096)
-			n, addr, err := relayConn.ReadFrom(buf)
-			if err != nil {
-				log.Printf("Failed to read from relay: %v", err)
-				continue
-			}
-			log.Printf("Received from %v: %v", addr, string(buf[:n]))
-		}
-	}()
-
 	log.Println("Enter messages to send to remote")
 	for scanner.Scan() {
 		msg := scanner.Text()

@@ -61,10 +61,7 @@ func NewClientConn(realm string) (*turn.Client, net.PacketConn, net.PacketConn, 
 		return nil, nil, nil, errors.Wrap(err, "Failed to allocate")
 	}
 
-	err = client.CreatePermission(&net.UDPAddr{
-		IP:   net.IPv4(0, 0, 0, 0),
-		Port: 0,
-	})
+	err = client.CreatePermission(relayConn.LocalAddr())
 	if err != nil {
 		CloseClientConn(client, conn, relayConn)
 		return nil, nil, nil, errors.Wrap(err, "Failed to create permission")
