@@ -11,13 +11,6 @@ import (
 
 var serverAddr = "turn.speed.cloudflare.com:50000"
 
-type ClientConnConfig struct {
-	ServerAddr string
-	Username   string
-	Password   string
-	Realm      string
-}
-
 func NewClientConn(realm string) (*turn.Client, net.PacketConn, net.PacketConn, error) {
 	creds, err := credentials.Get()
 	if err != nil {
