@@ -6,6 +6,7 @@ import (
 	"context"
 	"flag"
 	"log"
+	"net"
 	"os"
 )
 
@@ -25,6 +26,7 @@ func main() {
 	}
 	defer client.CloseClientConn(turnClient, conn, relayConn)
 	log.Printf("TURN Client: %v", relayConn.LocalAddr())
+	log.Printf("Remote port for client: %d", relayConn.LocalAddr().(*net.UDPAddr).Port)
 
 	ln, err := quic.NewListener(relayConn)
 	if err != nil {

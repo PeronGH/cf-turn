@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	remotePort := flag.Int("r", 0, "remote port to forward to")
+	remotePort := flag.Int("r", 0, "remote port on TURN server")
 	localPort := flag.Int("l", 0, "local port to listen on")
 	realm := flag.String("realm", "cf-turn-forwarder.example.com", "realm used for TURN")
 	flag.Parse()
