@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"cf-stun/internal/client"
-	"cf-stun/internal/credentials"
 	"fmt"
 	"log"
 	"net"
@@ -11,22 +10,8 @@ import (
 	"strconv"
 )
 
-var serverAddr = "turn.speed.cloudflare.com:50000"
-
 func main() {
-	creds, err := credentials.Get()
-	if err != nil {
-		log.Panicf("Failed to get credentials: %v", err)
-	}
-
-	cfg := client.ClientConnConfig{
-		ServerAddr: serverAddr,
-		Username:   creds.Username,
-		Password:   creds.Password,
-		Realm:      "cf-turn.example.com",
-	}
-
-	turnClient, conn, relayConn, err := client.NewClientConn(&cfg)
+	turnClient, conn, relayConn, err := client.NewClientConn("cf-turn.example.com")
 	if err != nil {
 		log.Panicf("Failed to create client: %v", err)
 	}
@@ -50,8 +35,6 @@ func main() {
 		IP:   relayIP,
 		Port: remotePort,
 	}
-
-	turnClient.CreatePermission(remoteAddr)
 
 	go func() {
 		for {
