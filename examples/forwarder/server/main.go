@@ -4,10 +4,18 @@ import (
 	"cf-stun/internal/client"
 	"cf-stun/internal/quic"
 	"context"
+	"flag"
 	"log"
 )
 
 func main() {
+	addr := flag.String("a", "", "address to forward to, e.g. localhost:8080")
+	flag.Parse()
+
+	if *addr == "" {
+		log.Fatal("Address to forward to is required")
+	}
+
 	turnClient, conn, relayConn, err := client.NewClientConn("cf-turn-forwarder.example.com")
 	if err != nil {
 		log.Panicf("Failed to create client: %v", err)
@@ -21,5 +29,5 @@ func main() {
 	}
 	defer ln.Close()
 
-	quic.ForwardSessionsAsServer(context.Background(), ln, "localhost:3000")
+	quic.ForwardSessionsAsServer(context.Background(), ln, *addr)
 }

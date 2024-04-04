@@ -4,11 +4,22 @@ import (
 	"cf-stun/internal/client"
 	"cf-stun/internal/quic"
 	"context"
-	"fmt"
+	"flag"
 	"log"
 )
 
 func main() {
+	remotePort := flag.Int("r", 0, "remote port to forward to")
+	localPort := flag.Int("l", 0, "local port to listen on")
+	flag.Parse()
+
+	if *remotePort == 0 {
+		log.Fatal("Remote port to forward to is required")
+	}
+	if *localPort == 0 {
+		log.Fatal("Local port to listen on is required")
+	}
+
 	turnClient, conn, relayConn, err := client.NewClientConn("cf-turn-forwarder.example.com")
 	if err != nil {
 		log.Panicf("Failed to create client: %v", err)
@@ -16,11 +27,7 @@ func main() {
 	defer client.CloseClientConn(turnClient, conn, relayConn)
 	log.Printf("TURN Client: %v", relayConn.LocalAddr())
 
-	var remotePort int
-	fmt.Printf("Enter remote port: ")
-	fmt.Scanf("%d\n", &remotePort)
-
-	session, err := quic.NewClientSession(context.Background(), relayConn, remotePort)
+	session, err := quic.NewClientSession(context.Background(), relayConn, *remotePort)
 	if err != nil {
 		log.Panicf("Failed to create session: %v", err)
 	}
@@ -30,5 +37,5 @@ func main() {
 		}
 	}()
 
-	quic.ForwardSessionAsClient(context.Background(), session, 8000)
+	quic.ForwardSessionAsClient(context.Background(), session, *localPort)
 }
