@@ -6,7 +6,15 @@ import (
 	"io"
 	"log"
 	"sync"
+	"time"
+
+	"github.com/quic-go/quic-go"
 )
+
+var quicConfig = &quic.Config{
+	KeepAlivePeriod:    10 * time.Second,
+	MaxIncomingStreams: 1 << 32,
+}
 
 func exchangeData(ctx context.Context, rw1, rw2 io.ReadWriter) {
 	ctx, cancel := context.WithCancel(ctx)
@@ -18,13 +26,17 @@ func exchangeData(ctx context.Context, rw1, rw2 io.ReadWriter) {
 	select {
 	case err := <-c1:
 		if err != nil {
-			log.Printf("readAndWrite error on c1: %v", err)
+			if !errors.Is(err, io.EOF) {
+				log.Printf("readAndWrite error on c1: %v", err)
+			}
 			cancel()
 			return
 		}
 	case err := <-c2:
 		if err != nil {
-			log.Printf("readAndWrite error on c2: %v", err)
+			if !errors.Is(err, io.EOF) {
+				log.Printf("readAndWrite error on c2: %v", err)
+			}
 			cancel()
 			return
 		}
@@ -50,17 +62,13 @@ func readAndWrite(ctx context.Context, r io.Reader, w io.Writer, wg *sync.WaitGr
 			default:
 				nr, err := r.Read(buff)
 				if err != nil {
-					if !errors.Is(err, io.EOF) {
-						c <- err
-					}
+					c <- err
 					return
 				}
 				if nr > 0 {
 					_, err := w.Write(buff[:nr])
 					if err != nil {
-						if !errors.Is(err, io.EOF) {
-							c <- err
-						}
+						c <- err
 						return
 					}
 				}

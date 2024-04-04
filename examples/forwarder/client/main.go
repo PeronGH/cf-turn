@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 )
 
 func main() {
@@ -29,15 +30,28 @@ func main() {
 	defer client.CloseClientConn(turnClient, conn, relayConn)
 	log.Printf("TURN Client: %v", relayConn.LocalAddr())
 
-	session, err := quic.NewClientSession(context.Background(), relayConn, *remotePort)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Establish QUIC session
+	session, err := quic.NewClientSession(ctx, relayConn, *remotePort)
 	if err != nil {
 		log.Panicf("Failed to create session: %v", err)
 	}
 	defer func() {
+		cancel()
 		if err := session.CloseWithError(0, "close"); err != nil {
 			log.Printf("session close error: %v", err)
 		}
 	}()
 
-	quic.ForwardSessionAsClient(context.Background(), session, *localPort)
+	// Register signal handler to cancel context
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		cancel()
+	}()
+
+	// Forward session as client
+	quic.ForwardSessionAsClient(ctx, session, *localPort)
 }

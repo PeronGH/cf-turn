@@ -20,7 +20,7 @@ func NewClientSession(ctx context.Context, conn net.PacketConn, remotePort int) 
 		Port: remotePort,
 	}
 
-	return quic.Dial(ctx, conn, remoteAddr, tlsConf, nil)
+	return quic.Dial(ctx, conn, remoteAddr, tlsConf, quicConfig)
 }
 
 func ForwardSessionAsClient(ctx context.Context, session quic.Connection, localPort int) {
@@ -32,12 +32,17 @@ func ForwardSessionAsClient(ctx context.Context, session quic.Connection, localP
 	log.Printf("listening on %v", ln.Addr())
 
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Printf("failed to accept: %v", err)
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			conn, err := ln.Accept() // TODO: fix blocking at here when ctx.Done()
+			if err != nil {
+				log.Printf("failed to accept: %v", err)
+			}
+			log.Printf("accepted connection: %v", conn.RemoteAddr())
+			go handleClientConn(ctx, conn, session)
 		}
-		log.Printf("accepted connection: %v", conn.RemoteAddr())
-		go handleClientConn(ctx, conn, session)
 	}
 }
 

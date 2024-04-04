@@ -9,6 +9,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 )
 
 func main() {
@@ -30,11 +31,28 @@ func main() {
 	log.Printf("TURN Client: %v", relayConn.LocalAddr())
 	log.Printf("Remote port for client: %d", relayConn.LocalAddr().(*net.UDPAddr).Port)
 
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Start QUIC server
 	ln, err := quic.NewListener(relayConn)
 	if err != nil {
 		log.Panicf("Failed to create server: %v", err)
 	}
-	defer ln.Close()
+	defer func() {
+		cancel()
+		if err := ln.Close(); err != nil {
+			log.Printf("listener close error: %v", err)
+		}
+	}()
 
-	quic.ForwardSessionsAsServer(context.Background(), ln, *addr)
+	// Register signal handler to cancel context
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		<-signalChan
+		cancel()
+	}()
+
+	// Forward sessions as server
+	quic.ForwardSessionsAsServer(ctx, ln, *addr)
 }
