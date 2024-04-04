@@ -5,6 +5,7 @@ import (
 	"cf-stun/internal/quic"
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 )
@@ -16,6 +17,7 @@ func main() {
 	flag.Parse()
 
 	if *remotePort == 0 || *localPort == 0 {
+		fmt.Println("Please provide remote and local ports. Usage:")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}

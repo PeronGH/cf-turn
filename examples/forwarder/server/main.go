@@ -5,17 +5,19 @@ import (
 	"cf-stun/internal/quic"
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"net"
 	"os"
 )
 
 func main() {
-	addr := flag.String("a", "", "address to forward to, e.g. localhost:8080")
+	addr := flag.String("a", "", "address to be forwarded, e.g. localhost:8080")
 	realm := flag.String("realm", "cf-turn-forwarder.example.com", "realm used for TURN")
 	flag.Parse()
 
 	if *addr == "" {
+		fmt.Println("Please provide an address to be forwarded. Usage:")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
