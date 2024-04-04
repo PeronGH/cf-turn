@@ -29,7 +29,7 @@ func ForwardSessionAsClient(ctx context.Context, session quic.Connection, localP
 		log.Printf("failed to listen: %v", err)
 	}
 	defer ln.Close()
-	log.Printf("listening on: %s", ln.Addr().String())
+	log.Printf("listening on %v", ln.Addr())
 
 	for {
 		conn, err := ln.Accept()

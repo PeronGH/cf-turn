@@ -76,7 +76,7 @@ func serverSessionHandler(ctx context.Context, session quic.Connection, addr str
 			log.Printf("session error: %v", err)
 			break
 		}
-		log.Printf("accepted stream: %v", stream.StreamID())
+		log.Printf("accepted stream: %v, from: %v", stream.StreamID(), session.RemoteAddr())
 		go serverStreamHandler(ctx, stream, addr)
 	}
 }
