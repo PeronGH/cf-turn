@@ -54,11 +54,11 @@ func generateCert() (tls.Certificate, error) {
 func ForwardSessionsAsServer(ctx context.Context, ln *quic.Listener, addr string) {
 	for {
 		session, err := ln.Accept(ctx)
-		log.Printf("accepted session: %v", session.RemoteAddr())
 		if err != nil {
 			log.Printf("listener error: %v", err)
 			continue
 		}
+		log.Printf("accepted session: %v", session.RemoteAddr())
 
 		go serverSessionHandler(ctx, session, addr)
 	}
