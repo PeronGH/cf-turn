@@ -25,7 +25,7 @@ func main() {
 
 	turnClient, conn, relayConn, err := client.NewClientConn(*realm)
 	if err != nil {
-		log.Panicf("Failed to create client: %v", err)
+		log.Fatalf("Failed to create client: %v", err)
 	}
 	defer client.CloseClientConn(turnClient, conn, relayConn)
 	log.Printf("TURN Client: %v", relayConn.LocalAddr())
@@ -35,7 +35,7 @@ func main() {
 	// Establish QUIC session
 	session, err := quic.NewClientSession(ctx, relayConn, *remotePort)
 	if err != nil {
-		log.Panicf("Failed to create session: %v", err)
+		log.Fatalf("Failed to create session: %v", err)
 	}
 	defer func() {
 		cancel()

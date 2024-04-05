@@ -9,7 +9,7 @@ import (
 func main() {
 	turnClient, conn, relayConn, err := client.NewClientConn("cf-turn.example.com")
 	if err != nil {
-		log.Panicf("Failed to create client: %v", err)
+		log.Fatalf("Failed to create client: %v", err)
 	}
 	defer client.CloseClientConn(turnClient, conn, relayConn)
 	log.Printf("TURN Client: %v", relayConn.LocalAddr())
@@ -25,12 +25,12 @@ func main() {
 		startTime := time.Now()
 		_, err = relayConn.WriteTo(data, relayConn.LocalAddr())
 		if err != nil {
-			log.Panicf("Failed to write: %v", err)
+			log.Fatalf("Failed to write: %v", err)
 		}
 
 		_, _, err = relayConn.ReadFrom(buf)
 		if err != nil {
-			log.Panicf("Failed to read: %v", err)
+			log.Fatalf("Failed to read: %v", err)
 		}
 
 		log.Printf("Ping: %v", time.Since(startTime))

@@ -8,7 +8,7 @@ import (
 func main() {
 	turnClient, conn, relayConn, err := client.NewClientConn("cf-turn.example.com")
 	if err != nil {
-		log.Panicf("Failed to create client: %v", err)
+		log.Fatalf("Failed to create client: %v", err)
 	}
 	defer client.CloseClientConn(turnClient, conn, relayConn)
 	log.Printf("TURN Client: %v", relayConn.LocalAddr())
