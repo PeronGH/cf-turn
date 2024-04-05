@@ -10,6 +10,7 @@ import (
 )
 
 var quicConfig = &quic.Config{
+	MaxIdleTimeout:     5 * time.Minute,
 	KeepAlivePeriod:    10 * time.Second,
 	MaxIncomingStreams: 1 << 32,
 }
