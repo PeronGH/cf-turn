@@ -26,7 +26,7 @@ func NewListener(conn net.PacketConn) (*quic.Listener, error) {
 		NextProtos:   []string{"forwarder"},
 	}
 
-	return quic.Listen(conn, tlsConf, nil)
+	return quic.Listen(conn, tlsConf, quicConfig)
 }
 
 // The following code is adapted from https://github.com/moul/quicssh/blob/master/server.go
