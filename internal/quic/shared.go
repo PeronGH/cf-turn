@@ -2,10 +2,8 @@ package quic
 
 import (
 	"context"
-	"errors"
 	"io"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/quic-go/quic-go"
@@ -16,64 +14,65 @@ var quicConfig = &quic.Config{
 	MaxIncomingStreams: 1 << 32,
 }
 
+type contextReader struct {
+	ctx context.Context
+	r   io.Reader
+}
+
+func (cr *contextReader) Read(p []byte) (n int, err error) {
+	ch := make(chan struct{})
+	go func() {
+		defer close(ch)
+		n, err = cr.r.Read(p)
+	}()
+
+	select {
+	case <-cr.ctx.Done():
+		return 0, cr.ctx.Err()
+	case <-ch:
+		return n, err
+	}
+}
+
+type contextWriter struct {
+	ctx context.Context
+	w   io.Writer
+}
+
+func (cw *contextWriter) Write(p []byte) (n int, err error) {
+	ch := make(chan struct{})
+	go func() {
+		defer close(ch)
+		n, err = cw.w.Write(p)
+	}()
+
+	select {
+	case <-cw.ctx.Done():
+		return 0, cw.ctx.Err()
+	case <-ch:
+		return n, err
+	}
+}
+
 func exchangeData(ctx context.Context, rw1, rw2 io.ReadWriter) {
 	ctx, cancel := context.WithCancel(ctx)
 
-	var wg sync.WaitGroup
-	wg.Add(2)
-	c1 := readAndWrite(ctx, rw1, rw2, &wg)
-	c2 := readAndWrite(ctx, rw2, rw1, &wg)
-	select {
-	case err := <-c1:
-		if err != nil {
-			if !errors.Is(err, io.EOF) {
-				log.Printf("readAndWrite error on c1: %v", err)
-			}
-			cancel()
-			return
-		}
-	case err := <-c2:
-		if err != nil {
-			if !errors.Is(err, io.EOF) {
-				log.Printf("readAndWrite error on c2: %v", err)
-			}
-			cancel()
-			return
-		}
+	errCh := make(chan error)
+	defer close(errCh)
+
+	go readAndWrite(ctx, rw1, rw2, errCh)
+	go readAndWrite(ctx, rw2, rw1, errCh)
+
+	if err := <-errCh; err != nil {
+		log.Printf("readAndWrite error: %v", err)
 	}
 	cancel()
-	wg.Wait()
+	<-errCh
 }
 
-// The following code is adapted from https://github.com/moul/quicssh/blob/master/main.go
-
-func readAndWrite(ctx context.Context, r io.Reader, w io.Writer, wg *sync.WaitGroup) <-chan error {
-	c := make(chan error)
-	go func() {
-		if wg != nil {
-			defer wg.Done()
-		}
-		buff := make([]byte, 32*1024)
-
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				nr, err := r.Read(buff)
-				if err != nil {
-					c <- err
-					return
-				}
-				if nr > 0 {
-					_, err := w.Write(buff[:nr])
-					if err != nil {
-						c <- err
-						return
-					}
-				}
-			}
-		}
-	}()
-	return c
+func readAndWrite(ctx context.Context, r io.Reader, w io.Writer, errCh chan<- error) {
+	ctxR := &contextReader{ctx: ctx, r: r}
+	ctxW := &contextWriter{ctx: ctx, w: w}
+	_, err := io.Copy(ctxW, ctxR)
+	errCh <- err
 }

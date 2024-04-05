@@ -97,4 +97,5 @@ func serverStreamHandler(ctx context.Context, stream quic.Stream, addr string) {
 	defer rConn.Close()
 
 	exchangeData(ctx, stream, rConn)
+	log.Printf("exchange data finished for stream: %v", stream.StreamID())
 }
