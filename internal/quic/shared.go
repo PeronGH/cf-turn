@@ -13,6 +13,7 @@ var quicConfig = &quic.Config{
 	MaxIdleTimeout:     5 * time.Minute,
 	KeepAlivePeriod:    10 * time.Second,
 	MaxIncomingStreams: 1 << 32,
+	EnableDatagrams:    true,
 }
 
 type contextReader struct {

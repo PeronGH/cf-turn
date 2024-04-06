@@ -75,6 +75,7 @@ func serverSessionHandler(ctx context.Context, session quic.Connection, addr str
 			log.Printf("session close error: %v", err)
 		}
 	}()
+
 	for {
 		stream, err := session.AcceptStream(ctx)
 		if err != nil {
