@@ -68,7 +68,11 @@ func ForwardSessionsAsServer(ctx context.Context, ln *quic.Listener, forwarder *
 		log.Infof("accepted session: %v", session.RemoteAddr())
 
 		go serverSessionHandler(ctx, session, addr)
-		go forwarder.Handle(session)
+		go func() {
+			if err := forwarder.Handle(session); err != nil {
+				log.Warnf("error when forwarding UDP from %s: %v", session.RemoteAddr(), err)
+			}
+		}()
 	}
 }
 
