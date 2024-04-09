@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/quic-go/quic-go"
+	"github.com/sagernet/sing/common/bufio"
 )
 
 func NewClientSession(ctx context.Context, conn net.PacketConn, remotePort int) (quic.Connection, error) {
@@ -64,22 +65,15 @@ func ForwardSessionAsClient(ctx context.Context, session quic.Connection, localP
 }
 
 func handleClientConn(ctx context.Context, conn net.Conn, session quic.Connection) {
-	defer func() {
-		if err := conn.Close(); err != nil {
-			log.Printf("connection close error: %v", err)
-		}
-	}()
-
 	stream, err := session.OpenStreamSync(ctx)
 	if err != nil {
 		log.Printf("failed to open stream: %v", err)
+		return
 	}
-	defer func() {
-		if err := stream.Close(); err != nil {
-			log.Printf("stream close error: %v", err)
-		}
-	}()
 
-	exchangeData(ctx, conn, stream)
+	err = bufio.CopyConn(ctx, conn, wrapStreamAsConn(stream, nil, nil))
+	if err != nil {
+		log.Printf("copy error: %v", err)
+	}
 	log.Printf("exchange data finished for %v", conn.RemoteAddr())
 }

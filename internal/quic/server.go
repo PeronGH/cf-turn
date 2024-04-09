@@ -11,6 +11,8 @@ import (
 	"math/big"
 	"net"
 
+	"github.com/sagernet/sing/common/bufio"
+
 	"github.com/pkg/errors"
 	"github.com/quic-go/quic-go"
 )
@@ -88,15 +90,15 @@ func serverSessionHandler(ctx context.Context, session quic.Connection, addr str
 }
 
 func serverStreamHandler(ctx context.Context, stream quic.Stream, addr string) {
-	defer stream.Close()
-
 	rConn, err := net.Dial("tcp", addr)
 	if err != nil {
 		log.Printf("dial error: %v", err)
 		return
 	}
-	defer rConn.Close()
 
-	exchangeData(ctx, stream, rConn)
+	err = bufio.CopyConn(ctx, wrapStreamAsConn(stream, nil, nil), rConn)
+	if err != nil {
+		log.Printf("copy error: %v", err)
+	}
 	log.Printf("exchange data finished for stream: %v", stream.StreamID())
 }
