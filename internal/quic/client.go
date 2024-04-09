@@ -3,9 +3,10 @@ package quic
 import (
 	"context"
 	"crypto/tls"
-	"log"
 	"net"
 
+	"github.com/PeronGH/datagram-forwarder/forwarder"
+	"github.com/charmbracelet/log"
 	"github.com/quic-go/quic-go"
 	"github.com/sagernet/sing/common/bufio"
 )
@@ -25,12 +26,30 @@ func NewClientSession(ctx context.Context, conn net.PacketConn, remotePort int) 
 }
 
 func ForwardSessionAsClient(ctx context.Context, session quic.Connection, localPort int) {
+	go func() {
+		ln, err := net.ListenUDP("udp", &net.UDPAddr{Port: localPort})
+		if err != nil {
+			log.Errorf("failed to listen: %v", err)
+			return
+		}
+		defer ln.Close()
+
+		err = forwarder.RunClient(forwarder.ClientConfig{
+			Ctx:       ctx,
+			RelayConn: session,
+			Listener:  ln,
+		})
+		if err != nil {
+			log.Errorf("failed to run client: %v", err)
+		}
+	}()
+
 	ln, err := net.ListenTCP("tcp", &net.TCPAddr{Port: localPort})
 	if err != nil {
-		log.Printf("failed to listen: %v", err)
+		log.Warnf("failed to listen: %v", err)
 	}
 	defer ln.Close()
-	log.Printf("listening on %v", ln.Addr())
+	log.Infof("listening on %v", ln.Addr())
 
 	connCh := make(chan net.Conn)
 	errCh := make(chan error)
@@ -56,24 +75,30 @@ func ForwardSessionAsClient(ctx context.Context, session quic.Connection, localP
 		case <-ctx.Done():
 			return
 		case err := <-errCh:
-			log.Printf("failed to accept: %v", err)
+			log.Warnf("failed to accept: %v", err)
 		case conn := <-connCh:
-			log.Printf("accepted connection: %v", conn.RemoteAddr())
+			log.Infof("accepted connection: %v", conn.RemoteAddr())
 			go handleClientConn(ctx, conn, session)
 		}
 	}
 }
 
 func handleClientConn(ctx context.Context, conn net.Conn, session quic.Connection) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+
 	stream, err := session.OpenStreamSync(ctx)
 	if err != nil {
-		log.Printf("failed to open stream: %v", err)
+		log.Errorf("failed to open stream: %v", err)
 		return
 	}
 
 	err = bufio.CopyConn(ctx, conn, wrapStreamAsConn(stream, nil, nil))
 	if err != nil {
-		log.Printf("copy error: %v", err)
+		log.Warnf("copy error: %v", err)
 	}
-	log.Printf("exchange data finished for %v", conn.RemoteAddr())
+	log.Infof("exchange data finished for %v", conn.RemoteAddr())
 }

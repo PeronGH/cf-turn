@@ -6,9 +6,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
+
+	"github.com/charmbracelet/log"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 	defer client.CloseClientConn(turnClient, conn, relayConn)
-	log.Printf("TURN Client: %v", relayConn.LocalAddr())
+	log.Infof("TURN Client: %v", relayConn.LocalAddr())
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -40,7 +41,7 @@ func main() {
 	defer func() {
 		cancel()
 		if err := session.CloseWithError(0, "close"); err != nil {
-			log.Printf("session close error: %v", err)
+			log.Warnf("session close error: %v", err)
 		}
 	}()
 

@@ -6,10 +6,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/signal"
+
+	"github.com/PeronGH/datagram-forwarder/forwarder"
+	"github.com/charmbracelet/log"
 )
 
 func main() {
@@ -28,8 +30,8 @@ func main() {
 		log.Fatalf("Failed to create client: %v", err)
 	}
 	defer client.CloseClientConn(turnClient, conn, relayConn)
-	log.Printf("TURN Client: %v", relayConn.LocalAddr())
-	log.Printf("Remote port for client: %d", relayConn.LocalAddr().(*net.UDPAddr).Port)
+	log.Infof("TURN Client: %v", relayConn.LocalAddr())
+	log.Infof("Remote port for client: %d", relayConn.LocalAddr().(*net.UDPAddr).Port)
 
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -41,9 +43,17 @@ func main() {
 	defer func() {
 		cancel()
 		if err := ln.Close(); err != nil {
-			log.Printf("listener close error: %v", err)
+			log.Warnf("listener close error: %v", err)
 		}
 	}()
+
+	// Create UDP forwarder
+	udpAddr, err := net.ResolveUDPAddr("udp", *addr)
+	if err != nil {
+		log.Fatalf("Failed to resolve UDP address: %v", err)
+	}
+	forwarder := forwarder.NewServer(ctx, udpAddr, nil)
+	defer forwarder.Close()
 
 	// Register signal handler to cancel context
 	signalChan := make(chan os.Signal, 1)
@@ -54,5 +64,5 @@ func main() {
 	}()
 
 	// Forward sessions as server
-	quic.ForwardSessionsAsServer(ctx, ln, *addr)
+	quic.ForwardSessionsAsServer(ctx, ln, forwarder, *addr)
 }

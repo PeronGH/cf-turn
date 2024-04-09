@@ -7,14 +7,14 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
-	"log"
 	"math/big"
 	"net"
 
-	"github.com/sagernet/sing/common/bufio"
-
+	"github.com/PeronGH/datagram-forwarder/forwarder"
+	"github.com/charmbracelet/log"
 	"github.com/pkg/errors"
 	"github.com/quic-go/quic-go"
+	"github.com/sagernet/sing/common/bufio"
 )
 
 func NewListener(conn net.PacketConn) (*quic.Listener, error) {
@@ -53,38 +53,44 @@ func generateCert() (tls.Certificate, error) {
 	return tlsCert, nil
 }
 
-func ForwardSessionsAsServer(ctx context.Context, ln *quic.Listener, addr string) {
+func ForwardSessionsAsServer(ctx context.Context, ln *quic.Listener, forwarder *forwarder.Server, addr string) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			session, err := ln.Accept(ctx)
-			if err != nil {
-				log.Printf("listener error: %v", err)
-				continue
-			}
-			log.Printf("accepted session: %v", session.RemoteAddr())
-
-			go serverSessionHandler(ctx, session, addr)
 		}
+		session, err := ln.Accept(ctx)
+		if err != nil {
+			log.Warnf("listener error: %v", err)
+			continue
+		}
+		log.Infof("accepted session: %v", session.RemoteAddr())
+
+		go serverSessionHandler(ctx, session, addr)
+		go forwarder.Handle(session)
 	}
 }
 
 func serverSessionHandler(ctx context.Context, session quic.Connection, addr string) {
 	defer func() {
 		if err := session.CloseWithError(0, "close"); err != nil {
-			log.Printf("session close error: %v", err)
+			log.Warnf("session close error: %v", err)
 		}
 	}()
 
 	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+		}
 		stream, err := session.AcceptStream(ctx)
 		if err != nil {
-			log.Printf("session error: %v", err)
+			log.Errorf("session error: %v", err)
 			break
 		}
-		log.Printf("accepted stream: %v, from: %v", stream.StreamID(), session.RemoteAddr())
+		log.Infof("accepted stream: %v, from: %v", stream.StreamID(), session.RemoteAddr())
 		go serverStreamHandler(ctx, stream, addr)
 	}
 }
@@ -92,13 +98,13 @@ func serverSessionHandler(ctx context.Context, session quic.Connection, addr str
 func serverStreamHandler(ctx context.Context, stream quic.Stream, addr string) {
 	rConn, err := net.Dial("tcp", addr)
 	if err != nil {
-		log.Printf("dial error: %v", err)
+		log.Errorf("dial error: %v", err)
 		return
 	}
 
 	err = bufio.CopyConn(ctx, wrapStreamAsConn(stream, nil, nil), rConn)
 	if err != nil {
-		log.Printf("copy error: %v", err)
+		log.Warnf("copy error: %v", err)
 	}
-	log.Printf("exchange data finished for stream: %v", stream.StreamID())
+	log.Infof("exchange data finished for stream: %v", stream.StreamID())
 }
