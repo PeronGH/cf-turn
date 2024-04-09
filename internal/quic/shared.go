@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/quic-go/quic-go"
+	"github.com/sagernet/sing/common/bufio"
 )
 
 var quicConfig = &quic.Config{
@@ -75,6 +76,6 @@ func exchangeData(ctx context.Context, rw1, rw2 io.ReadWriter) {
 func readAndWrite(ctx context.Context, r io.Reader, w io.Writer, errCh chan<- error) {
 	ctxR := &contextReader{ctx: ctx, r: r}
 	ctxW := &contextWriter{ctx: ctx, w: w}
-	_, err := io.Copy(ctxW, ctxR)
+	_, err := bufio.Copy(ctxW, ctxR)
 	errCh <- err
 }

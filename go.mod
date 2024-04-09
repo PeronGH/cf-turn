@@ -7,6 +7,7 @@ require (
 	github.com/pion/turn/v3 v3.0.1
 	github.com/pkg/errors v0.9.1
 	github.com/quic-go/quic-go v0.42.0
+	github.com/sagernet/sing v0.3.8
 )
 
 require (
@@ -23,6 +24,6 @@ require (
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db // indirect
 	golang.org/x/mod v0.11.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
-	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect
 )

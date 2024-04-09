@@ -21,7 +21,7 @@ go run ./examples/forwarder/server -a localhost:22
 go run ./examples/forwarder/client
 
 # forward SSH
-go run ./examples/forwarder/client -r $REMOTE_PORT -l 2222
+go run ./examples/forwarder/client -l 2222 -r $REMOTE_PORT
 
 # connect to forwarded SSH
 ssh -p 2222 localhost
