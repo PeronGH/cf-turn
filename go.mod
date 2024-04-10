@@ -3,6 +3,8 @@ module cf-stun
 go 1.22.1
 
 require (
+	github.com/PeronGH/datagram-forwarder v0.1.1
+	github.com/charmbracelet/log v0.4.0
 	github.com/pion/logging v0.2.2
 	github.com/pion/turn/v3 v3.0.2
 	github.com/pkg/errors v0.9.1
@@ -11,16 +13,11 @@ require (
 )
 
 require (
-	github.com/PeronGH/datagram-forwarder v0.1.0 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/charmbracelet/lipgloss v0.10.0 // indirect
-	github.com/charmbracelet/log v0.4.0 // indirect
-	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
-	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/google/pprof v0.0.0-20240409012703-83162a5b38cd // indirect
-	github.com/ianlancetaylor/demangle v0.0.0-20240312041847-bd984b5ce465 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
